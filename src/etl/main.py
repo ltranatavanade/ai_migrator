@@ -10,6 +10,9 @@ from .helpers import (
     write_csv_bytes,
     add_column,
     infer_output_blob_path,
+    filter_rows, 
+    groupby_agg, 
+    fillna_cols,
 )
 
 log = get_logger("etl.main")
@@ -33,7 +36,9 @@ def main():
 
     df = read_csv_bytes(raw)
     df = add_column(df, "Column_01", "New_Value_01")
-    df = add_column(df, "Column_02", "New_Value_02")
+    df = add_column(df, "Time", "")
+    df = filter_rows("Score > 50")
+
 
     out_bytes = write_csv_bytes(df)
     upload_blob_from_memory(bsc, container, output_blob, out_bytes, overwrite=True)

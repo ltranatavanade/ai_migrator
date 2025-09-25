@@ -45,3 +45,83 @@ def infer_output_blob_path(input_blob: str) -> str:
     stem, ext = os.path.splitext(base)
     enriched = f"{stem}_enriched{ext or '.csv'}"
     return os.path.join(os.path.dirname(input_blob) or "", enriched).replace("\\", "/")
+
+# -- add near the top if not present --
+import pandas as pd
+
+# ------------------------------------------------------------------
+# Filter rows using a pandas.query expression (e.g., "age > 30 and city == 'AMS'")
+# Notes:
+# - Backtick-quote column names that contain spaces or special characters: `Total Amount`
+# - engine="python" is used for broad operator support
+# ------------------------------------------------------------------
+def filter_rows(df: pd.DataFrame, expr: str | None) -> pd.DataFrame:
+    """
+    Filter rows via pandas.query syntax. If expr is None/empty, returns df unchanged.
+    Examples:
+      expr="age >= 18 and status == 'active'"
+      expr="`Total Amount` > 1000 and country in ['NL','BE']"
+    """
+    if not expr or not str(expr).strip():
+        return df
+    return df.query(expr, engine="python")
+
+
+# ------------------------------------------------------------------
+# GroupBy + Aggregations
+# Accepts:
+#   group_cols: list[str]          (e.g., ["country","city"])
+#   aggs: dict[str, str|list[str]] (e.g., {"amount":["sum","mean"], "order_id":"count"})
+# Returns:
+#   Aggregated DataFrame with flattened column names like "sum_amount", "mean_amount", "count_order_id"
+# ------------------------------------------------------------------
+def groupby_agg(
+    df: pd.DataFrame,
+    group_cols: list[str] | None,
+    aggs: dict[str, str | list[str]] | None,
+) -> pd.DataFrame:
+    """
+    Perform group-by aggregations with deterministic, flat column names.
+
+    Example:
+      group_cols = ["country", "city"]
+      aggs = {"amount": ["sum", "mean"], "id": "count"}
+
+      Output columns: ["country","city","sum_amount","mean_amount","count_id"]
+    """
+    if not group_cols or not aggs:
+        return df
+
+    # Keep NA groups as groups (match Spark groupBy behavior more closely)
+    g = df.groupby(group_cols, dropna=False)
+    out = g.agg(aggs)
+
+    # Flatten MultiIndex (pandas) into "func_col" (e.g., "sum_amount")
+    if isinstance(out.columns, pd.MultiIndex):
+        out.columns = [
+            f"{func}_{col}" for (col, func) in out.columns.to_flat_index()
+        ]
+    else:
+        out.columns = [str(c) for c in out.columns]
+
+    out = out.reset_index()
+    return out
+
+
+# ------------------------------------------------------------------
+# fill NA in selected columns
+# ------------------------------------------------------------------
+def fillna_cols(
+    df: pd.DataFrame,
+    value: str | int | float | bool | None,
+    subset: list[str] | None = None,
+) -> pd.DataFrame:
+    """
+    Fill NA/None in the provided subset of columns (or all if subset=None).
+    Example: fillna_cols(df, 0, ["amount","quantity"])
+    """
+    if value is None:
+        return df
+    if subset:
+        return df.fillna({col: value for col in subset})
+    return df.fillna(value)
