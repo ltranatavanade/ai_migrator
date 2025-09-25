@@ -38,12 +38,11 @@ def main():
     df = read_csv_bytes(raw)
 
 
-    # df = add_column(df, "Column_01", "New_Value_01")
-    df["NEW_Column"] = "VAlue ABC"
+    df = add_column(df, "Column_01", "New_Value_01")
     df = add_column(df, "Time", "")
     df = df.query("Score > 10")
+    df = df.groupby("Category").mean(numeric_only=True) 
 
-    # df = df.groupby("Category").mean(numeric_only=True) 
 
     out_bytes = write_csv_bytes(df)
     upload_blob_from_memory(bsc, container, output_blob, out_bytes, overwrite=True)
