@@ -42,17 +42,9 @@ def main():
     df = add_column(df, "Time", "")
     df = df.query("Score > 10")
 
-    df['passed'] = False
-    df.loc[df['Score'] > 60, 'passed'] = True
+    df = df[["Score"] > 60] 
 
-    df = df.rename(columns={"Score": "FinalScore"})
-    df["Name"] = df["Name"].str.lower()
-    df = df.fillna({"FinalScore": 0, "Comments": "N/A"})
-    df["HighScore"] = np.where(df["FinalScore"] > 80, "Yes", "No")
     df = df.drop(columns=["Column_01"])
-
-    # now filtering with the renamed column
-    df = df[(df["FinalScore"] > 70) & (df["Category"] == "Type B")]
 
     # aggregate at the end
     df = df.groupby("Category").mean(numeric_only=True) 
