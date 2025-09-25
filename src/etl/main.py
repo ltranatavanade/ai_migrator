@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import numpy as np
 from dotenv import load_dotenv
 from .logger import get_logger
 from .helpers import (
@@ -42,6 +43,15 @@ def main():
     df['passed'] = False
     df.loc[df['Score'] > 60, 'passed'] = True
     df = df.groupby("Category").mean() 
+
+    df = df.rename(columns={"Score": "FinalScore"})
+    df = df.drop(columns=["Column_01"])
+    df = df[(df["Score"] > 70) & (df["Category"] == "Type B")]
+    df["Name"] = df["Name"].str.lower()
+    df = df.fillna({"FinalScore": 0, "Comments": "N/A"})
+    
+    df["HighScore"] = np.where(df["Score"] > 80, "Yes", "No")   
+
 
     
 
