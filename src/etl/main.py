@@ -37,8 +37,11 @@ def main():
     df = read_csv_bytes(raw)
     df = add_column(df, "Column_01", "New_Value_01")
     df = add_column(df, "Time", "")
-    df = df.query("Score > 50")
-    df = df.groupby("Category").mean()
+    df['passed'] = False
+    df.loc[df['Score'] > 60, 'passed'] = True
+    df = df.query("Score > 10")
+
+    
 
 
     out_bytes = write_csv_bytes(df)
