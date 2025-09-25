@@ -37,7 +37,7 @@ def main():
     df = read_csv_bytes(raw)
     df = add_column(df, "Column_01", "New_Value_01")
     df = add_column(df, "Time", "")
-    df = df[df["Score"] > 50]
+    df = df.query("Score > 50")
 
 
     out_bytes = write_csv_bytes(df)
